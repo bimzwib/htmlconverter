@@ -1,48 +1,123 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" style="color-scheme:light">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#eef3fa">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Navisworks HTML → XML</title>
+<title>BIMZ HTML Converter — Navisworks HTML → XML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600;700&family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f7f9;--card:#fff;--tx:#1b2430;--mut:#667085;--bd:#d9dee5;--ac:#1f6feb;--ok:#1a7f4b;--er:#c0392b;--code:#f0f2f5}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12161c;--card:#1b212a;--tx:#e8ecf1;--mut:#97a1ae;--bd:#2f3743;--ac:#5b9dff;--ok:#4cc38a;--er:#ff7b6b;--code:#141920}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#12161c;--card:#1b212a;--tx:#e8ecf1;--mut:#97a1ae;--bd:#2f3743;--ac:#5b9dff;--ok:#4cc38a;--er:#ff7b6b;--code:#141920}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 "Segoe UI",Tahoma,Arial,sans-serif}
-main{max-width:980px;margin:0 auto;padding:20px 16px 40px}
-h1{font-size:22px;margin:0 0 4px}
-p.sub{color:var(--mut);margin:0 0 18px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
-.drop{border:2px dashed var(--bd);border-radius:10px;padding:26px;text-align:center;color:var(--mut);cursor:pointer}
-.drop.on{border-color:var(--ac);color:var(--ac)}
-textarea{width:100%;min-height:120px;border:1px solid var(--bd);border-radius:8px;background:var(--code);color:var(--tx);font:12px/1.5 Consolas,monospace;padding:8px;direction:ltr;text-align:left}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
-select,button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
-button.p{background:var(--ac);border-color:var(--ac);color:#fff;cursor:pointer}
-button{cursor:pointer}
-.msg{margin-top:8px;font-size:14px}.ok{color:var(--ok)}.er{color:var(--er)}
+:root{
+  --bg:#eef3fa;--bg2:#e4ecf7;--card:#ffffff;--card2:#f0f6ff;
+  --border:#c5d8ef;--border2:rgba(26,86,219,.25);
+  --cyan:#1a56db;--navy:#0a1f44;--purple:#6d28d9;--green:#059669;--red:#dc2626;
+  --t1:#0d1f3c;--t2:#2d4a6e;--t3:#6b8db5;
+  --sans:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;--condense:'Barlow Condensed',sans-serif;
+  --r:14px;
+  /* aliases used by the converter logic */
+  --tx:var(--t1);--mut:var(--t3);--bd:var(--border);--ac:var(--cyan);--ok:var(--green);--er:var(--red);--code:#f0f6ff;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--t1);font-size:15px;line-height:1.7;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--cyan),var(--purple));border-radius:2px}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:500}
+.nav-inner{max-width:1400px;margin:0 auto;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0 2rem;background:rgba(238,243,250,.92);backdrop-filter:blur(30px) saturate(180%);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;text-decoration:none}
+.logo-img{height:38px;width:auto;display:block;filter:drop-shadow(0 0 10px rgba(26,86,219,.25))}
+.nav-center{display:flex;gap:.25rem;align-items:center;flex-wrap:wrap}
+.nav-link{font-family:var(--mono);color:var(--t2);text-decoration:none;font-size:.65rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:7px 14px;border-radius:6px;transition:all .2s;position:relative}
+.nav-link:hover,.nav-link.active{color:var(--cyan)}
+.nav-link::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:0;height:1px;background:var(--cyan);transition:width .3s}
+.nav-link:hover::after,.nav-link.active::after{width:60%}
+
+/* BUTTONS */
+.btn-primary,button.p{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--cyan),var(--navy));color:#fff;border:1px solid var(--navy);padding:12px 24px;border-radius:6px;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;transition:all .3s;box-shadow:0 8px 22px rgba(10,31,68,.22);cursor:pointer}
+.btn-primary:hover,button.p:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(10,31,68,.35)}
+select,button{font:inherit;font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;padding:10px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--t1);cursor:pointer;transition:all .2s}
+button:not(.p):hover,select:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* HERO / SECTION */
+main{max-width:1100px;margin:0 auto;padding:3rem 1.5rem 3rem}
+.section-label{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.58rem;font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:#0891b2;margin-bottom:.75rem}
+.section-label::before{content:'//'}
+h1{font-family:var(--condense);font-size:clamp(2rem,5vw,4rem);font-weight:800;line-height:.98;letter-spacing:-.02em;color:var(--navy);margin-bottom:.4rem}
+h1 .grad{background:linear-gradient(110deg,#1a56db,#6d28d9,#db2777,#1a56db);background-size:300% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:300% center}}
+@media (prefers-reduced-motion:reduce){h1 .grad{animation:none}}
+p.sub{color:var(--t2);margin:0 0 1.6rem;max-width:760px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem;position:relative;overflow:hidden;box-shadow:0 14px 36px rgba(10,31,68,.06)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1a56db,#6d28d9,#db2777,#d97706,#059669,#0d9488)}
+.drop{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;color:var(--t3);font-family:var(--mono);font-size:.78rem;letter-spacing:.04em;cursor:pointer;background:var(--card2);transition:all .2s}
+.drop:hover,.drop.on{border-color:var(--cyan);color:var(--cyan);background:rgba(26,86,219,.05)}
+textarea{width:100%;min-height:120px;border:1px solid var(--border);border-radius:8px;background:var(--code);color:var(--t1);font:12px/1.5 'JetBrains Mono',Consolas,monospace;padding:10px;direction:ltr;text-align:left}
+textarea:focus{outline:2px solid var(--border2);border-color:var(--cyan)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.row label{font-family:var(--mono);font-size:.7rem;color:var(--t2);letter-spacing:.06em}
+.msg{margin-top:8px;font-size:14px}.ok{color:var(--green)}.er{color:var(--red)}
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px;direction:ltr;text-align:left}
-th,td{border:1px solid var(--bd);padding:4px 8px;white-space:nowrap}
-th{background:var(--code)}
-.chips span{display:inline-block;background:var(--code);border:1px solid var(--bd);border-radius:20px;padding:2px 12px;margin:0 0 6px 6px;font-size:13px}
-.files{font-size:13px;color:var(--mut);margin-top:8px;direction:ltr;text-align:left}
+th,td{border:1px solid var(--border);padding:5px 9px;white-space:nowrap}
+th{background:var(--card2);color:var(--navy);font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase}
+.chips span{display:inline-block;background:rgba(26,86,219,.07);border:1px solid rgba(26,86,219,.2);color:var(--cyan);border-radius:6px;padding:2px 12px;margin:0 6px 6px 0;font-family:var(--mono);font-size:.68rem;font-weight:600}
+.files{font-family:var(--mono);font-size:12px;color:var(--t3);margin-top:8px;direction:ltr;text-align:left}
+details summary{cursor:pointer;color:var(--t2);font-family:var(--mono);font-size:.72rem;letter-spacing:.04em}
 details.cols{margin-top:12px}
-details.cols summary{cursor:pointer;color:var(--mut)}
+
+/* OTHER TOOLS */
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:.5rem}
+.tool-card{display:block;text-decoration:none;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--c);border-radius:var(--r);padding:1.3rem;position:relative;overflow:hidden;transition:all .3s;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 6%,#fff),#fff 60%);box-shadow:0 14px 36px rgba(10,31,68,.06)}
+.tool-card:hover{transform:translateY(-3px);border-color:var(--c);box-shadow:0 18px 40px color-mix(in srgb,var(--c) 28%,transparent)}
+.tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem}
+.tc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:color-mix(in srgb,var(--c) 10%,#fff);border:1px solid color-mix(in srgb,var(--c) 30%,transparent)}
+.badge{font-family:var(--mono);font-size:.5rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid color-mix(in srgb,var(--c) 35%,transparent);background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c)}
+.tc-name{font-family:var(--display);font-size:1rem;font-weight:700;color:var(--t1);margin-bottom:.35rem}
+.tc-desc{font-size:.8rem;color:var(--t2);line-height:1.7}
+.tc-url{font-family:var(--mono);font-size:.62rem;color:var(--c);margin-top:.8rem;letter-spacing:.04em}
+
+/* FOOTER */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:1.6rem 2rem;margin-top:2rem}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.footer-copy{font-family:var(--mono);font-size:.6rem;color:var(--t3);letter-spacing:.1em}
+.footer-links{display:flex;gap:1.2rem;flex-wrap:wrap}
+.footer-links a{font-size:.8rem;color:var(--t3);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--cyan)}
+
+@media (max-width:900px){.nav-center{display:none}.tools-grid{grid-template-columns:1fr}.nav-inner{padding:0 1rem}}
 </style>
 </head>
 <body>
+<nav>
+  <div class="nav-inner">
+    <a href="https://bimzlog.vercel.app" target="_blank" rel="noopener" class="nav-logo"><img src="https://bimzlog.vercel.app/favicon-180.png" alt="BIMZ" class="logo-img"></a>
+    <div class="nav-center">
+      <a href="https://bimzlog.vercel.app" target="_blank" rel="noopener" class="nav-link">Portfolio</a>
+      <a href="https://clash-matrix-generator.vercel.app/" target="_blank" rel="noopener" class="nav-link">Clash Matrix</a>
+      <a href="https://bcf-converter.vercel.app/" target="_blank" rel="noopener" class="nav-link">BCF Converter</a>
+      <a href="#" class="nav-link active">HTML &rarr; XML</a>
+    </div>
+  </div>
+</nav>
+
 <main>
-<h1>Navisworks HTML → XML</h1>
+<div class="section-label">BIMZ HTML Converter</div>
+<h1><span style="color:var(--navy)">NAVISWORKS</span><br><span class="grad">HTML &rarr; XML</span></h1>
 <p class="sub">Upload a Clash Detective report exported as HTML (Tabular) and get an XML file in the same structure Navisworks exports. Every column in the HTML is carried into the XML. Everything runs in your browser; nothing is uploaded.</p>
 
 <div class="card">
   <div class="drop" id="drop">Drag HTML files here or click to choose (multiple files = multiple tests)</div>
   <input type="file" id="fi" accept=".html,.htm" multiple hidden>
   <div class="files" id="fl"></div>
-  <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--mut)">Or paste the HTML source</summary>
+  <details style="margin-top:10px"><summary>Or paste the HTML source</summary>
     <textarea id="paste" placeholder="Paste HTML source…"></textarea></details>
   <div class="row">
     <label>Units: <select id="units"><option>m</option><option>mm</option><option>cm</option><option>ft</option><option>in</option></select></label>
@@ -63,7 +138,40 @@ details.cols summary{cursor:pointer;color:var(--mut)}
   <div class="row" style="margin:0 0 10px"><button class="p" id="xmls">Download all as XML files</button><button id="zip">Download ZIP (one XML per test)</button><button id="copy">Copy XML</button><button id="sel">Select all</button><span class="msg" id="cm"></span></div>
   <textarea id="out" style="min-height:360px" readonly></textarea>
 </div>
+
+<div class="section-label" style="margin-top:2.5rem">More BIMZ Tools</div>
+<div class="tools-grid">
+  <a class="tool-card" style="--c:#1a56db" href="https://bimzlog.vercel.app" target="_blank" rel="noopener">
+    <div class="tc-top"><div class="tc-icon">&#127760;</div><span class="badge">Website</span></div>
+    <div class="tc-name">BIMZ Portfolio</div>
+    <div class="tc-desc">MEP BIM Coordinator &amp; BIM Developer &mdash; Revit and Navisworks tools, templates, tutorials and experience.</div>
+    <div class="tc-url">bimzlog.vercel.app &#8599;</div>
+  </a>
+  <a class="tool-card" style="--c:#6d28d9" href="https://clash-matrix-generator.vercel.app/" target="_blank" rel="noopener">
+    <div class="tc-top"><div class="tc-icon">&#9638;</div><span class="badge">Free</span></div>
+    <div class="tc-name">Clash Matrix Generator</div>
+    <div class="tc-desc">Build a clash matrix for your coordination model quickly and export it ready to use.</div>
+    <div class="tc-url">clash-matrix-generator.vercel.app &#8599;</div>
+  </a>
+  <a class="tool-card" style="--c:#db2777" href="https://bcf-converter.vercel.app/" target="_blank" rel="noopener">
+    <div class="tc-top"><div class="tc-icon">&#128193;</div><span class="badge">Free</span></div>
+    <div class="tc-name">BIMZ BCF Converter</div>
+    <div class="tc-desc">Convert BCF files exported from ACC into Navisworks XML &mdash; every issue becomes a Saved Viewpoint.</div>
+    <div class="tc-url">bcf-converter.vercel.app &#8599;</div>
+  </a>
+</div>
 </main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-copy">&copy; ZIAD ANTER &middot; MEP BIM COORDINATOR &amp; BIM DEVELOPER</div>
+    <div class="footer-links">
+      <a href="https://bimzlog.vercel.app" target="_blank" rel="noopener">Portfolio</a>
+      <a href="https://clash-matrix-generator.vercel.app/" target="_blank" rel="noopener">Clash Matrix</a>
+      <a href="https://bcf-converter.vercel.app/" target="_blank" rel="noopener">BCF Converter</a>
+    </div>
+  </div>
+</footer>
 
 <script>
 (function(){
